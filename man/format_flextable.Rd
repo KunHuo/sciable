@@ -8,9 +8,10 @@ format_flextable(
   data,
   sep = "__",
   fontname = "Times New Roman",
+  fontname_eastasia = "SimSun",
   fontsize = 11,
-  column_width = 0.75,
-  spacer_width = 0.25,
+  column_width = 0.8,
+  spacer_width = 0.2,
   border_width = 1,
   notes = NULL
 )
@@ -21,17 +22,22 @@ format_flextable(
 \item{sep}{A character string used to separate group names from
 column labels in column names. Defaults to `"__"`.}
 
-\item{fontname}{A character string specifying the font family used
-throughout the table. Defaults to `"Times New Roman"`.}
+\item{fontname}{A character string specifying the Western font
+used for English letters, numbers, and other Latin-based
+characters. Defaults to `"Times New Roman"`.}
+
+\item{fontname_eastasia}{A character string specifying the East Asian
+font used for Chinese and other East Asian characters.
+Defaults to `"Songti SC"`.}
 
 \item{fontsize}{A numeric value specifying the font size in points.
 Defaults to `11`.}
 
 \item{column_width}{A numeric value specifying the width of regular
-columns in inches. Defaults to `0.75`.}
+columns in inches. Defaults to `0.8`.}
 
 \item{spacer_width}{A numeric value specifying the width of spacer
-columns in inches. Defaults to `0.25`.}
+columns in inches. Defaults to `0.2`.}
 
 \item{border_width}{A numeric value specifying the width of table
 borders. Defaults to `1`.}
@@ -47,15 +53,20 @@ A `flextable` object.
 }
 \description{
 Format a data frame as a flextable with support for grouped headers,
-three-line table borders, superscript annotations, cell notes, and
-table footnotes.
+three-line table borders, superscript annotations, cell notes, table
+footnotes, column widths, alignment, and separate fonts for Western
+and East Asian characters.
 }
 \details{
 Column names containing `sep` are interpreted as grouped columns.
-The text before the first `sep` is used as the group label, while
-the remaining text is used as the second-level column label.
+The text before the first `sep` is used as the group label, while the
+remaining text is used as the second-level column label.
 The original column order is preserved, and a spacer column is
 automatically inserted between adjacent column groups.
+
+If no column names contain `sep`, the data are treated as an
+ordinary table with a single-level header. No grouping or spacer
+columns are created.
 
 Superscripts can be specified directly in cell values or headers
 using the `^` notation. For example, `"1.25^a"` is formatted as
@@ -65,11 +76,19 @@ Notes can be added to body cells or header cells using the `notes`
 argument. Both numeric column indices and column names are supported,
 and multiple rows or columns can be specified within a single note.
 
+The `fontname` argument controls the Western font, including
+English letters, numbers, and other Latin-based characters.
+The `fontname_eastasia` argument controls the East Asian font,
+including Chinese characters.
+
 
 The function creates a two-level header when grouped columns are
 detected. Grouped columns are merged horizontally within the first
 header level, while ungrouped columns retain an empty first-level
 header.
+
+When no grouped columns are detected, the function creates a
+standard one-level header without parsing column names.
 
 The table uses a three-line layout consisting of a top border,
 a border below the header, and a bottom border below the table body.
@@ -80,20 +99,41 @@ Superscripts specified with `^` are automatically parsed in both
 body cells and header cells. Explicit notes added through `notes`
 are displayed as superscripts and their corresponding descriptions
 are added to the table footer.
+
+Western and East Asian fonts are specified independently. This allows
+English and numeric characters to use one font while Chinese
+characters use another font when the table is exported to Word.
+
+If `fontname_eastasia` is `NULL`, the East Asian font defaults to
+the value supplied to `fontname`.
 }
 \examples{
-dat <- data.frame(
-  variable = c("BMI", "Age", "Smoking"),
-  group1__estimate = c("1.25^a", "1.10", "0.85^b"),
-  group1__p = c("0.03", "0.12", "0.01"),
-  group2__estimate = c("1.20", "1.08^c", "0.88"),
+# Ordinary table: no "__" in column names
+dat1 <- data.frame(
+  Variable = c("BMI", "Age", "Smoking"),
+  Estimate = c("1.25^a", "1.10", "0.85"),
+  P = c("0.03", "0.12", "0.01"),
   check.names = FALSE
 )
+
+ft1 <- format_flextable(dat1)
+
+# Grouped table: "__" is present in column names
+dat2 <- data.frame(
+  Variable = c("BMI", "Age", "Smoking"),
+  `Model 1__Estimate` = c("1.25^a", "1.10", "0.85"),
+  `Model 1__P` = c("0.03", "0.12", "0.01"),
+  `Model 2__Estimate` = c("1.20", "1.08", "0.88"),
+  `Model 2__P` = c("0.04", "0.15", "0.02"),
+  check.names = FALSE
+)
+
+ft2 <- format_flextable(dat2)
 
 notes <- list(
   list(
     row = c(1, 3),
-    col = "group1__p",
+    col = "Model 1__P",
     mark = "d",
     text = "P < 0.05"
   ),
@@ -105,8 +145,8 @@ notes <- list(
   )
 )
 
-ft <- format_flextable(
-  dat,
+ft3 <- format_flextable(
+  dat2,
   notes = notes
 )
 

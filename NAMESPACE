@@ -3,3 +3,4 @@
 S3method(print,booktabs)
 export(format_flextable)
 export(tidy_quantreg)
+export(write_word)

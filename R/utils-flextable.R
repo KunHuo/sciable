@@ -1,15 +1,19 @@
-
 #' Format a flextable with grouped headers and three-line style
 #'
 #' Format a data frame as a flextable with support for grouped headers,
-#' three-line table borders, superscript annotations, cell notes, and
-#' table footnotes.
+#' three-line table borders, superscript annotations, cell notes, table
+#' footnotes, column widths, alignment, and separate fonts for Western
+#' and East Asian characters.
 #'
 #' Column names containing `sep` are interpreted as grouped columns.
-#' The text before the first `sep` is used as the group label, while
-#' the remaining text is used as the second-level column label.
+#' The text before the first `sep` is used as the group label, while the
+#' remaining text is used as the second-level column label.
 #' The original column order is preserved, and a spacer column is
 #' automatically inserted between adjacent column groups.
+#'
+#' If no column names contain `sep`, the data are treated as an
+#' ordinary table with a single-level header. No grouping or spacer
+#' columns are created.
 #'
 #' Superscripts can be specified directly in cell values or headers
 #' using the `^` notation. For example, `"1.25^a"` is formatted as
@@ -19,17 +23,26 @@
 #' argument. Both numeric column indices and column names are supported,
 #' and multiple rows or columns can be specified within a single note.
 #'
+#' The `fontname` argument controls the Western font, including
+#' English letters, numbers, and other Latin-based characters.
+#' The `fontname_eastasia` argument controls the East Asian font,
+#' including Chinese characters.
+#'
 #' @param data A data frame containing the data to be formatted.
 #' @param sep A character string used to separate group names from
 #'   column labels in column names. Defaults to `"__"`.
-#' @param fontname A character string specifying the font family used
-#'   throughout the table. Defaults to `"Times New Roman"`.
+#' @param fontname A character string specifying the Western font
+#'   used for English letters, numbers, and other Latin-based
+#'   characters. Defaults to `"Times New Roman"`.
+#' @param fontname_eastasia A character string specifying the East Asian
+#'   font used for Chinese and other East Asian characters.
+#'   Defaults to `"Songti SC"`.
 #' @param fontsize A numeric value specifying the font size in points.
 #'   Defaults to `11`.
 #' @param column_width A numeric value specifying the width of regular
-#'   columns in inches. Defaults to `0.75`.
+#'   columns in inches. Defaults to `0.8`.
 #' @param spacer_width A numeric value specifying the width of spacer
-#'   columns in inches. Defaults to `0.25`.
+#'   columns in inches. Defaults to `0.2`.
 #' @param border_width A numeric value specifying the width of table
 #'   borders. Defaults to `1`.
 #' @param notes A list of note specifications. Each note must contain
@@ -46,6 +59,9 @@
 #' header level, while ungrouped columns retain an empty first-level
 #' header.
 #'
+#' When no grouped columns are detected, the function creates a
+#' standard one-level header without parsing column names.
+#'
 #' The table uses a three-line layout consisting of a top border,
 #' a border below the header, and a bottom border below the table body.
 #' All table text is regular weight by default, and the first body
@@ -56,19 +72,41 @@
 #' are displayed as superscripts and their corresponding descriptions
 #' are added to the table footer.
 #'
+#' Western and East Asian fonts are specified independently. This allows
+#' English and numeric characters to use one font while Chinese
+#' characters use another font when the table is exported to Word.
+#'
+#' If `fontname_eastasia` is `NULL`, the East Asian font defaults to
+#' the value supplied to `fontname`.
+#'
+#'
 #' @examples
-#' dat <- data.frame(
-#'   variable = c("BMI", "Age", "Smoking"),
-#'   group1__estimate = c("1.25^a", "1.10", "0.85^b"),
-#'   group1__p = c("0.03", "0.12", "0.01"),
-#'   group2__estimate = c("1.20", "1.08^c", "0.88"),
+#' # Ordinary table: no "__" in column names
+#' dat1 <- data.frame(
+#'   Variable = c("BMI", "Age", "Smoking"),
+#'   Estimate = c("1.25^a", "1.10", "0.85"),
+#'   P = c("0.03", "0.12", "0.01"),
 #'   check.names = FALSE
 #' )
+#'
+#' ft1 <- format_flextable(dat1)
+#'
+#' # Grouped table: "__" is present in column names
+#' dat2 <- data.frame(
+#'   Variable = c("BMI", "Age", "Smoking"),
+#'   `Model 1__Estimate` = c("1.25^a", "1.10", "0.85"),
+#'   `Model 1__P` = c("0.03", "0.12", "0.01"),
+#'   `Model 2__Estimate` = c("1.20", "1.08", "0.88"),
+#'   `Model 2__P` = c("0.04", "0.15", "0.02"),
+#'   check.names = FALSE
+#' )
+#'
+#' ft2 <- format_flextable(dat2)
 #'
 #' notes <- list(
 #'   list(
 #'     row = c(1, 3),
-#'     col = "group1__p",
+#'     col = "Model 1__P",
 #'     mark = "d",
 #'     text = "P < 0.05"
 #'   ),
@@ -80,45 +118,56 @@
 #'   )
 #' )
 #'
-#' ft <- format_flextable(
-#'   dat,
+#' ft3 <- format_flextable(
+#'   dat2,
 #'   notes = notes
 #' )
 #'
 #' @export
-format_flextable <- function(data,
-                             sep = "__",
-                             fontname = "Times New Roman",
-                             fontsize = 11,
-                             column_width = 0.75,
-                             spacer_width = 0.25,
-                             border_width = 1,
-                             notes = NULL) {
+format_flextable <- function(
+    data,
+    sep = "__",
+    fontname = "Times New Roman",
+    fontname_eastasia = "SimSun",
+    fontsize = 11,
+    column_width = 0.8,
+    spacer_width = 0.2,
+    border_width = 1,
+    notes = NULL
+) {
 
   # Check input
-  stopifnot(
-    is.data.frame(data)
-  )
+  stopifnot(is.data.frame(data))
 
   # Validate notes
-  validate_notes(
-    notes = notes,
-    data = data
-  )
+  validate_notes(notes = notes, data = data)
 
   # Get column names
   data_names <- names(data)
 
-  # Build group structure
-  structure <- build_group_structure(
-    data_names = data_names,
-    sep = sep
-  )
+  # Check whether grouped columns exist
+  has_group <- any(grepl(sep, data_names, fixed = TRUE))
 
-  group <- structure$group
-  label <- structure$label
-  column_index <- structure$column_index
-  spacer <- structure$spacer
+  # Build group structure
+  if (has_group) {
+
+    structure <- build_group_structure(
+      data_names = data_names,
+      sep = sep
+    )
+
+    group <- structure$group
+    label <- structure$label
+    column_index <- structure$column_index
+    spacer <- structure$spacer
+
+  } else {
+
+    group <- rep(NA_character_, length(data_names))
+    label <- data_names
+    column_index <- seq_along(data_names)
+    spacer <- rep(FALSE, length(data_names))
+  }
 
   # Build table data
   out <- build_table_data(
@@ -129,66 +178,71 @@ format_flextable <- function(data,
   internal_names <- names(out)
 
   # Build headers
-  headers <- build_headers(
-    column_index = column_index,
-    group = group,
-    label = label
-  )
+  if (has_group) {
 
-  header1 <- headers$header1
-  header2 <- headers$header2
+    headers <- build_headers(
+      column_index = column_index,
+      group = group,
+      label = label
+    )
 
-  names(header1) <- internal_names
+    header1 <- headers$header1
+    header2 <- headers$header2
+
+  } else {
+
+    header1 <- character(0)
+    header2 <- data_names
+  }
+
+  # Set internal column names
   names(header2) <- internal_names
+  if (has_group) names(header1) <- internal_names
 
   # Create flextable
-  ft <- flextable::flextable(
-    out,
-    col_keys = internal_names
-  )
+  ft <- flextable::flextable(out, col_keys = internal_names)
 
   # Set second-level header
-  ft <- flextable::set_header_labels(
-    ft,
-    values = header2
-  )
+  ft <- flextable::set_header_labels(ft, values = header2)
 
   # Add first-level header
-  ft <- flextable::add_header_row(
-    ft,
-    values = header1,
-    colwidths = rep(
-      1,
-      length(header1)
-    )
-  )
+  if (has_group) {
 
-  # Merge grouped headers
-  ft <- merge_group_headers(
-    ft = ft,
-    column_index = column_index,
-    group = group
-  )
+    ft <- flextable::add_header_row(
+      ft,
+      values = header1,
+      colwidths = rep(1, length(header1))
+    )
+
+    ft <- merge_group_headers(
+      ft = ft,
+      column_index = column_index,
+      group = group
+    )
+  }
 
   # Remove all borders
-  ft <- flextable::border_remove(
-    ft
-  )
+  ft <- flextable::border_remove(ft)
 
   # Define border
-  border <- officer::fp_border(
-    color = "black",
-    width = border_width
-  )
-
+  border <- officer::fp_border(color = "black", width = border_width)
 
   # Add borders
-  ft <- add_table_borders(
-    ft = ft,
-    column_index = column_index,
-    group = group,
-    border = border
-  )
+  if (has_group) {
+
+    ft <- add_table_borders(
+      ft = ft,
+      column_index = column_index,
+      group = group,
+      border = border
+    )
+
+  } else {
+
+    ft <- flextable::hline_top(ft, border = border, part = "header")
+    ft <- flextable::hline_bottom(ft, border = border, part = "header")
+    ft <- flextable::hline_bottom(ft, border = border, part = "body")
+  }
 
   # Automatic superscript
   ft <- add_automatic_superscripts(
@@ -198,6 +252,7 @@ format_flextable <- function(data,
     header1 = header1,
     header2 = header2,
     fontname = fontname,
+    fontname_eastasia = fontname_eastasia,
     fontsize = fontsize
   )
 
@@ -211,6 +266,7 @@ format_flextable <- function(data,
     header1 = header1,
     header2 = header2,
     fontname = fontname,
+    fontname_eastasia = fontname_eastasia,
     fontsize = fontsize
   )
 
@@ -219,102 +275,68 @@ format_flextable <- function(data,
   normal_col <- which(!spacer)
 
   if (length(normal_col) > 0) {
-
-    ft <- flextable::width(
-      ft,
-      j = normal_col,
-      width = column_width
-    )
+    ft <- flextable::width(ft, j = normal_col, width = column_width)
   }
 
   if (length(spacer_col) > 0) {
-
-    ft <- flextable::width(
-      ft,
-      j = spacer_col,
-      width = spacer_width
-    )
+    ft <- flextable::width(ft, j = spacer_col, width = spacer_width)
   }
 
-  # Add footer notes
+  # Footer notes
   ft <- add_note_footer(
     ft = ft,
     notes = notes,
     fontname = fontname,
+    fontname_eastasia = fontname_eastasia,
     fontsize = fontsize
   )
 
-  # Set font
-  ft <- flextable::font(
+  # Set fonts for Western and East Asian characters separately
+  ft <- flextable::style(
     ft,
-    fontname = fontname,
+    pr_t = officer::fp_text(
+      font.family = fontname,
+      eastasia.family = fontname_eastasia,
+      hansi.family = fontname,
+      font.size = fontsize
+    ),
     part = "all"
   )
 
-  ft <- flextable::fontsize(
-    ft,
-    size = fontsize,
-    part = "all"
-  )
-
-  # Set all text to regular
-  ft <- flextable::bold(
-    ft,
-    bold = FALSE,
-    part = "all"
-  )
+  # Cancel bold formatting
+  ft <- flextable::bold(ft, bold = FALSE, part = "all")
 
   # Center alignment
-  ft <- flextable::align(
-    ft,
-    align = "center",
-    part = "all"
-  )
+  ft <- flextable::align(ft, align = "center", part = "all")
 
-  # Left-align first body column
-  ft <- flextable::align(
-    ft,
-    j = 1,
-    align = "left",
-    part = "all"
-  )
+  # Left-align first column
+  ft <- flextable::align(ft, j = 1, align = "left", part = "all")
 
-  ft <- flextable::line_spacing(
-    ft,
-    space = 1,
-    part = "all"
-  )
+  # Line spacing
+  ft <- flextable::line_spacing(ft, space = 1, part = "all")
+  ft <- flextable::line_spacing(ft, space = 1.5, part = "footer")
 
-  ft <- flextable::line_spacing(
-    ft,
-    space = 1.5,
-    part = "footer"
-  )
+  # Vertical alignment
+  ft <- flextable::valign(ft, valign = "center", part = "all")
 
-  ft <- flextable::valign(
-    ft,
-    valign = "center",
-    part = "all"
-  )
-
+  # Cell padding
   ft <- flextable::padding(
     ft,
-    padding.top = 2,
-    padding.bottom = 2,
-    padding.left = 2,
-    padding.right = 2,
+    padding.top = 2, padding.bottom = 2,
+    padding.left = 2, padding.right = 2,
     part = "all"
   )
 
-  ft <- flextable::set_caption(
+  # Fit to page width
+  ft <- flextable::set_table_properties(
     ft,
-    caption = "Table 1. Association between BMI and cardiovascular disease",
-    style = "Table Caption"
+    width = 1,
+    layout = "autofit"
   )
 
-  # Return flextable
   ft
 }
+
 
 
 # Parse superscript text
@@ -323,6 +345,7 @@ parse_superscript <- function(x) {
   x <- as.character(x)
 
   if (is.na(x)) {
+
     return(
       list(
         normal = "",
@@ -337,6 +360,7 @@ parse_superscript <- function(x) {
   )
 
   if (pos[1] == -1) {
+
     return(
       list(
         normal = x,
@@ -359,6 +383,7 @@ parse_superscript <- function(x) {
   )
 }
 
+
 # Add superscript text to a flextable cell
 add_superscript_cell <- function(ft,
                                  i,
@@ -366,6 +391,7 @@ add_superscript_cell <- function(ft,
                                  value,
                                  part,
                                  fontname,
+                                 fontname_eastasia,
                                  fontsize) {
 
   parsed <- parse_superscript(
@@ -405,6 +431,8 @@ add_superscript_cell <- function(ft,
     fontname = fontname,
     props = officer::fp_text(
       font.family = fontname,
+      cs.family = fontname,
+      eastasia.family = fontname_eastasia,
       font.size = fontsize,
       bold = FALSE,
       vertical.align = "superscript"
@@ -423,7 +451,6 @@ add_superscript_cell <- function(ft,
     part = part
   )
 }
-
 
 
 # Resolve column names or indices
@@ -733,7 +760,7 @@ build_table_data <- function(data,
       if (is.na(idx)) {
 
         rep(
-          "",
+          "  ",
           nrow(data)
         )
 
@@ -946,6 +973,7 @@ add_automatic_superscripts <- function(ft,
                                        header1,
                                        header2,
                                        fontname,
+                                       fontname_eastasia,
                                        fontsize) {
 
   # Body cells
@@ -976,6 +1004,7 @@ add_automatic_superscripts <- function(ft,
           value = as.character(value),
           part = "body",
           fontname = fontname,
+          fontname_eastasia = fontname_eastasia,
           fontsize = fontsize
         )
       }
@@ -983,26 +1012,30 @@ add_automatic_superscripts <- function(ft,
   }
 
   # Header level 1
-  for (j in seq_along(header1)) {
+  if (length(header1) > 0) {
 
-    if (
-      !is.na(header1[j]) &&
-      nzchar(header1[j]) &&
-      grepl(
-        "\\^",
-        header1[j]
-      )
-    ) {
+    for (j in seq_along(header1)) {
 
-      ft <- add_superscript_cell(
-        ft = ft,
-        i = 1,
-        j = j,
-        value = header1[j],
-        part = "header",
-        fontname = fontname,
-        fontsize = fontsize
-      )
+      if (
+        !is.na(header1[j]) &&
+        nzchar(header1[j]) &&
+        grepl(
+          "\\^",
+          header1[j]
+        )
+      ) {
+
+        ft <- add_superscript_cell(
+          ft = ft,
+          i = 1,
+          j = j,
+          value = header1[j],
+          part = "header",
+          fontname = fontname,
+          fontname_eastasia = fontname_eastasia,
+          fontsize = fontsize
+        )
+      }
     }
   }
 
@@ -1018,9 +1051,16 @@ add_automatic_superscripts <- function(ft,
       )
     ) {
 
+      # Header row depends on whether a first-level header exists
+      header_row <- if (length(header1) > 0) {
+        2
+      } else {
+        1
+      }
+
       ft <- add_superscript_cell(
         ft = ft,
-        i = 2,
+        i = header_row,
         j = j,
         value = header2[j],
         part = "header",
@@ -1043,42 +1083,78 @@ add_explicit_notes <- function(ft,
                                header1,
                                header2,
                                fontname,
+                               fontname_eastasia,
                                fontsize) {
+
   if (is.null(notes) ||
       length(notes) == 0) {
+
     return(ft)
   }
 
   for (note in notes) {
+
     # Resolve columns
-    original_cols <- resolve_note_columns(note$col, data_names)
+    original_cols <- resolve_note_columns(
+      note$col,
+      data_names
+    )
 
-    original_cols <- unique(original_cols)
+    original_cols <- unique(
+      original_cols
+    )
 
-    table_cols <- vapply(original_cols, function(col) {
-      which(column_index == col)
-    }, integer(1))
+    # Find table columns
+    table_cols <- vapply(
+      original_cols,
+      function(col) {
+
+        idx <- which(
+          column_index == col
+        )
+
+        if (length(idx) != 1) {
+
+          stop(
+            "Unable to resolve note column: ",
+            data_names[col]
+          )
+        }
+
+        idx
+      },
+      integer(1)
+    )
 
     mark <- note$mark
 
     # Body note
     if ("row" %in% names(note)) {
+
       for (row in note$row) {
+
         for (k in seq_along(original_cols)) {
+
           original_col <- original_cols[k]
           table_col <- table_cols[k]
 
           value <- data[[original_col]][row]
 
           if (is.na(value)) {
+
             value <- ""
 
           } else {
+
             value <- as.character(value)
           }
 
           # Add explicit mark
-          value <- paste0(value, "^", mark)
+          value <- paste0(
+            value,
+            "^",
+            mark
+          )
 
           ft <- add_superscript_cell(
             ft = ft,
@@ -1087,6 +1163,7 @@ add_explicit_notes <- function(ft,
             value = value,
             part = "body",
             fontname = fontname,
+            fontname_eastasia = fontname_eastasia,
             fontsize = fontsize
           )
         }
@@ -1095,21 +1172,40 @@ add_explicit_notes <- function(ft,
 
     # Header note
     if ("header" %in% names(note)) {
-      header_row <- as.integer(note$header)
+
+      header_row <- as.integer(
+        note$header
+      )
+
+      # In an ordinary table there is only one header row
+      if (length(header1) == 0 &&
+          header_row == 2) {
+
+        stop(
+          "header = 2 is not available when no grouped columns exist."
+        )
+      }
 
       for (table_col in table_cols) {
+
         value <- if (header_row == 1) {
           header1[table_col]
         } else {
           header2[table_col]
         }
 
-        if (is.na(value) ||
-            !nzchar(value)) {
+        if (
+          is.na(value) ||
+          !nzchar(value)
+        ) {
           next
         }
 
-        value <- paste0(value, "^", mark)
+        value <- paste0(
+          value,
+          "^",
+          mark
+        )
 
         ft <- add_superscript_cell(
           ft = ft,
@@ -1118,6 +1214,7 @@ add_explicit_notes <- function(ft,
           value = value,
           part = "header",
           fontname = fontname,
+          fontname_eastasia = fontname_eastasia,
           fontsize = fontsize
         )
       }
@@ -1129,7 +1226,10 @@ add_explicit_notes <- function(ft,
 
 
 # Add note footer
-add_note_footer <- function(ft, notes, fontname, fontsize) {
+add_note_footer <- function(ft, notes,
+                            fontname,
+                            fontname_eastasia,
+                            fontsize) {
   if (is.null(notes) ||
       length(notes) == 0) {
     return(ft)
@@ -1198,6 +1298,7 @@ add_note_footer <- function(ft, notes, fontname, fontsize) {
         props = officer::fp_text(
           font.size = fontsize,
           font.family = fontname,
+          eastasia.family = fontname_eastasia,
           bold = FALSE,
           vertical.align = "superscript"
         )
@@ -1211,6 +1312,7 @@ add_note_footer <- function(ft, notes, fontname, fontsize) {
         props = officer::fp_text(
           font.size = fontsize,
           font.family = fontname,
+          eastasia.family = fontname_eastasia,
           bold = FALSE,
           vertical.align = "baseline"
         )
@@ -1225,6 +1327,7 @@ add_note_footer <- function(ft, notes, fontname, fontsize) {
           props = officer::fp_text(
             font.size = fontsize,
             font.family = fontname,
+            eastasia.family = fontname_eastasia,
             bold = FALSE
           )
         )
@@ -1245,5 +1348,3 @@ add_note_footer <- function(ft, notes, fontname, fontsize) {
 
   ft
 }
-
-

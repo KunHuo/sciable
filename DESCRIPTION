@@ -20,7 +20,7 @@ Imports:
     broom,
     dplyr,
     flextable,
+    ggplot2,
     officer
 Suggests: 
     quantreg
-
