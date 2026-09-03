@@ -312,6 +312,90 @@ add_docx_title <- function(doc, title, style = "Normal") {
   officer::body_add_par(doc, value = title, style = style)
 }
 
+
+# add_docx_note <- function(doc,
+#                           value,
+#                           style = "Normal",
+#                           fontname = "Times New Roman",
+#                           fontname_eastasia = "SimSun",
+#                           fontsize = 11) {
+#
+#   stopifnot(
+#     is.character(value),
+#     length(value) == 1
+#   )
+#
+#   # Split text by paragraph breaks
+#   paragraphs <- strsplit(
+#     value,
+#     "\n",
+#     fixed = TRUE
+#   )[[1]]
+#
+#   # Add each paragraph separately
+#   for (p in paragraphs) {
+#
+#     # Split text into superscript and normal text
+#     parts <- regmatches(
+#       p,
+#       gregexpr(
+#         "\\^[^\\^]+\\^|[^\\^]+",
+#         p,
+#         perl = TRUE
+#       )
+#     )[[1]]
+#
+#     chunks <- lapply(parts, function(x) {
+#
+#       # Superscript text
+#       if (grepl("^\\^[^\\^]+\\^$", x)) {
+#
+#         text <- sub("^\\^", "", x)
+#         text <- sub("\\^$", "", text)
+#
+#         officer::ftext(
+#           text,
+#           prop = officer::fp_text(
+#             font.family = fontname,
+#             cs.family = fontname,
+#             eastasia.family = fontname_eastasia,
+#             font.size = fontsize,
+#             vertical.align = "superscript"
+#           )
+#         )
+#
+#         # Normal text
+#       } else {
+#
+#         officer::ftext(
+#           x,
+#           prop = officer::fp_text(
+#             font.family = fontname,
+#             cs.family = fontname,
+#             eastasia.family = fontname_eastasia,
+#             font.size = fontsize
+#           )
+#         )
+#       }
+#     })
+#
+#     # Create one paragraph
+#     fp <- do.call(
+#       officer::fpar,
+#       chunks
+#     )
+#
+#     # Add one real Word paragraph
+#     doc <- officer::body_add_fpar(
+#       doc,
+#       fp,
+#       style = style
+#     )
+#   }
+#
+#   doc
+# }
+
 add_docx_note <- function(doc,
                           value,
                           style = "Normal",
@@ -332,7 +416,12 @@ add_docx_note <- function(doc,
   )[[1]]
 
   # Add each paragraph separately
-  for (p in paragraphs) {
+  for (i in seq_along(paragraphs)) {
+
+    p <- paragraphs[i]
+
+    # First paragraph uses "note", others use "Normal"
+    current_style <- if (i == 1) "table note" else style
 
     # Split text into superscript and normal text
     parts <- regmatches(
@@ -388,7 +477,7 @@ add_docx_note <- function(doc,
     doc <- officer::body_add_fpar(
       doc,
       fp,
-      style = style
+      style = current_style
     )
   }
 
