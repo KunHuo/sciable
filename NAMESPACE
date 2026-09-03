@@ -2,5 +2,7 @@
 
 S3method(print,booktabs)
 export(format_flextable)
+export(set_family)
+export(theme_sci)
 export(tidy_quantreg)
 export(write_word)
