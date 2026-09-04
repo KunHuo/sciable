@@ -21,6 +21,7 @@ Imports:
     dplyr,
     flextable,
     ggplot2,
+    grDevices,
     officer
 Suggests: 
     quantreg

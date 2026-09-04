@@ -67,7 +67,7 @@ print_booktabs <- function(data, sep = "__", adj = NULL, ...){
 
   data[, ] <- lapply(data[, ], function(x){
     if(is.numeric(x)){
-      sapply(x, \(i){
+      sapply(x, function(i){
         if(is.na(i)){
           ""
         }else{
