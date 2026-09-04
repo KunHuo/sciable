@@ -92,6 +92,22 @@ write_word <- function(..., path, landscape = FALSE) {
   # Create Word document
   doc <- officer::read_docx(get_template("default.docx"))
 
+  # Set the initial document orientation directly
+  initial_section <- officer::prop_section(
+    page_size = officer::page_size(
+      orient = if (isTRUE(landscape)) {
+        "landscape"
+      } else {
+        "portrait"
+      }
+    )
+  )
+
+  doc <- officer::body_set_default_section(
+    doc,
+    value = initial_section
+  )
+
   # Track the previous page orientation
   previous_landscape <- isTRUE(landscape)
 
@@ -100,11 +116,17 @@ write_word <- function(..., path, landscape = FALSE) {
     item <- items[[i]]
 
     # Determine the orientation for the current object
-    current_landscape <- get_item_landscape(item = item, default = landscape)
+    current_landscape <- get_item_landscape(
+      item = item,
+      default = landscape
+    )
 
     # Change section only when orientation changes
     if (!identical(current_landscape, previous_landscape)) {
-      doc <- set_docx_orientation(doc = doc, landscape = current_landscape)
+      doc <- set_docx_orientation(
+        doc = doc,
+        landscape = current_landscape
+      )
     }
 
     # Add current object
@@ -112,13 +134,17 @@ write_word <- function(..., path, landscape = FALSE) {
       doc = doc,
       item = item,
       landscape = current_landscape,
-      title_style = "Normal",
+      title_style = "table title",
       note_style = "Normal"
     )
 
     # Add spacing between objects
     if (i < length(items)) {
-      doc <- officer::body_add_par(doc, value = "", style = "Normal")
+      doc <- officer::body_add_par(
+        doc,
+        value = "",
+        style = "Normal"
+      )
     }
 
     # Update previous orientation
@@ -126,7 +152,10 @@ write_word <- function(..., path, landscape = FALSE) {
   }
 
   # Save Word document
-  exec_write_docx(x = doc, path = path)
+  exec_write_docx(
+    x = doc,
+    path = path
+  )
 
   invisible(doc)
 }
@@ -284,6 +313,88 @@ add_docx_title <- function(doc, title, style = "Normal") {
 }
 
 
+# add_docx_note <- function(doc,
+#                           value,
+#                           style = "Normal",
+#                           fontname = "Times New Roman",
+#                           fontname_eastasia = "SimSun",
+#                           fontsize = 11) {
+#
+#   stopifnot(
+#     is.character(value),
+#     length(value) == 1
+#   )
+#
+#   # Split text by paragraph breaks
+#   paragraphs <- strsplit(
+#     value,
+#     "\n",
+#     fixed = TRUE
+#   )[[1]]
+#
+#   # Add each paragraph separately
+#   for (p in paragraphs) {
+#
+#     # Split text into superscript and normal text
+#     parts <- regmatches(
+#       p,
+#       gregexpr(
+#         "\\^[^\\^]+\\^|[^\\^]+",
+#         p,
+#         perl = TRUE
+#       )
+#     )[[1]]
+#
+#     chunks <- lapply(parts, function(x) {
+#
+#       # Superscript text
+#       if (grepl("^\\^[^\\^]+\\^$", x)) {
+#
+#         text <- sub("^\\^", "", x)
+#         text <- sub("\\^$", "", text)
+#
+#         officer::ftext(
+#           text,
+#           prop = officer::fp_text(
+#             font.family = fontname,
+#             cs.family = fontname,
+#             eastasia.family = fontname_eastasia,
+#             font.size = fontsize,
+#             vertical.align = "superscript"
+#           )
+#         )
+#
+#         # Normal text
+#       } else {
+#
+#         officer::ftext(
+#           x,
+#           prop = officer::fp_text(
+#             font.family = fontname,
+#             cs.family = fontname,
+#             eastasia.family = fontname_eastasia,
+#             font.size = fontsize
+#           )
+#         )
+#       }
+#     })
+#
+#     # Create one paragraph
+#     fp <- do.call(
+#       officer::fpar,
+#       chunks
+#     )
+#
+#     # Add one real Word paragraph
+#     doc <- officer::body_add_fpar(
+#       doc,
+#       fp,
+#       style = style
+#     )
+#   }
+#
+#   doc
+# }
 
 add_docx_note <- function(doc,
                           value,
@@ -297,74 +408,87 @@ add_docx_note <- function(doc,
     length(value) == 1
   )
 
-  # Split text into superscript, line break, and normal text
-  parts <- regmatches(
+  # Split text by paragraph breaks
+  paragraphs <- strsplit(
     value,
-    gregexpr(
-      "\\^[^\\^\\n]+\\^|\\n|[^\\^\\n]+",
-      value,
-      perl = TRUE
-    )
+    "\n",
+    fixed = TRUE
   )[[1]]
 
-  # Create formatted text chunks
-  chunks <- lapply(parts, function(x) {
+  # Add each paragraph separately
+  for (i in seq_along(paragraphs)) {
 
-    # Line break
-    if (x == "\n") {
+    p <- paragraphs[i]
 
-      officer::run_linebreak()
+    # First paragraph uses "note", others use "Normal"
+    current_style <- if (i == 1) "table note" else style
+
+    # Split text into superscript and normal text
+    parts <- regmatches(
+      p,
+      gregexpr(
+        "\\^[^\\^]+\\^|[^\\^]+",
+        p,
+        perl = TRUE
+      )
+    )[[1]]
+
+    chunks <- lapply(parts, function(x) {
 
       # Superscript text
-    } else if (grepl("^\\^[^\\^]+\\^$", x)) {
+      if (grepl("^\\^[^\\^]+\\^$", x)) {
 
-      text <- sub("^\\^", "", x)
-      text <- sub("\\^$", "", text)
+        text <- sub("^\\^", "", x)
+        text <- sub("\\^$", "", text)
 
-      officer::ftext(
-        text,
-        prop = officer::fp_text(
-          font.family = fontname,
-          cs.family = fontname,
-          eastasia.family = fontname_eastasia,
-          font.size = fontsize,
-          vertical.align = "superscript"
+        officer::ftext(
+          text,
+          prop = officer::fp_text(
+            font.family = fontname,
+            cs.family = fontname,
+            eastasia.family = fontname_eastasia,
+            font.size = fontsize,
+            vertical.align = "superscript"
+          )
         )
-      )
 
-      # Normal text
-    } else {
+        # Normal text
+      } else {
 
-      officer::ftext(
-        x,
-        prop = officer::fp_text(
-          font.family = fontname,
-          cs.family = fontname,
-          eastasia.family = fontname_eastasia,
-          font.size = fontsize
+        officer::ftext(
+          x,
+          prop = officer::fp_text(
+            font.family = fontname,
+            cs.family = fontname,
+            eastasia.family = fontname_eastasia,
+            font.size = fontsize
+          )
         )
-      )
-    }
-  })
+      }
+    })
 
-  # Combine text chunks
-  fp <- do.call(
-    officer::fpar,
-    chunks
-  )
+    # Create one paragraph
+    fp <- do.call(
+      officer::fpar,
+      chunks
+    )
 
-  # Add paragraph to document
-  officer::body_add_fpar(
-    doc,
-    fp,
-    style = style
-  )
+    # Add one real Word paragraph
+    doc <- officer::body_add_fpar(
+      doc,
+      fp,
+      style = current_style
+    )
+  }
+
+  doc
 }
+
 
 # Add a data frame to a Word document
 add_docx_table <- function(doc,
                            data,
-                           title_style = "Normal",
+                           title_style = "table title",
                            note_style = "Normal") {
   title <- attr(data, "title", exact = TRUE)
 

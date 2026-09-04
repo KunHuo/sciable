@@ -967,6 +967,113 @@ add_table_borders <- function(ft,
 
 
 # Add automatic superscripts from ^ syntax
+# add_automatic_superscripts <- function(ft,
+#                                        data,
+#                                        column_index,
+#                                        header1,
+#                                        header2,
+#                                        fontname,
+#                                        fontname_eastasia,
+#                                        fontsize) {
+#
+#   # Body cells
+#   for (j in seq_along(column_index)) {
+#
+#     original_col <- column_index[j]
+#
+#     if (is.na(original_col)) {
+#       next
+#     }
+#
+#     for (i in seq_len(nrow(data))) {
+#
+#       value <- data[[original_col]][i]
+#
+#       if (
+#         !is.na(value) &&
+#         grepl(
+#           "\\^",
+#           as.character(value)
+#         )
+#       ) {
+#
+#         ft <- add_superscript_cell(
+#           ft = ft,
+#           i = i,
+#           j = j,
+#           value = as.character(value),
+#           part = "body",
+#           fontname = fontname,
+#           fontname_eastasia = fontname_eastasia,
+#           fontsize = fontsize
+#         )
+#       }
+#     }
+#   }
+#
+#   # Header level 1
+#   if (length(header1) > 0) {
+#
+#     for (j in seq_along(header1)) {
+#
+#       if (
+#         !is.na(header1[j]) &&
+#         nzchar(header1[j]) &&
+#         grepl(
+#           "\\^",
+#           header1[j]
+#         )
+#       ) {
+#
+#         ft <- add_superscript_cell(
+#           ft = ft,
+#           i = 1,
+#           j = j,
+#           value = header1[j],
+#           part = "header",
+#           fontname = fontname,
+#           fontname_eastasia = fontname_eastasia,
+#           fontsize = fontsize
+#         )
+#       }
+#     }
+#   }
+#
+#   # Header level 2
+#   for (j in seq_along(header2)) {
+#
+#     if (
+#       !is.na(header2[j]) &&
+#       nzchar(header2[j]) &&
+#       grepl(
+#         "\\^",
+#         header2[j]
+#       )
+#     ) {
+#
+#       # Header row depends on whether a first-level header exists
+#       header_row <- if (length(header1) > 0) {
+#         2
+#       } else {
+#         1
+#       }
+#
+#       ft <- add_superscript_cell(
+#         ft = ft,
+#         i = header_row,
+#         j = j,
+#         value = header2[j],
+#         part = "header",
+#         fontname = fontname,
+#         fontsize = fontsize
+#       )
+#     }
+#   }
+#
+#   ft
+# }
+
+
 add_automatic_superscripts <- function(ft,
                                        data,
                                        column_index,
@@ -975,6 +1082,36 @@ add_automatic_superscripts <- function(ft,
                                        fontname,
                                        fontname_eastasia,
                                        fontsize) {
+
+  # Automatically convert a trailing single letter after a space
+  # into the superscript format "^a".
+  convert_automatic_superscript <- function(value) {
+
+    value <- as.character(value)
+
+    # Existing explicit superscript: keep unchanged
+    if (grepl("\\^", value)) {
+      return(value)
+    }
+
+    # Automatically superscript a single trailing letter after a space
+    # Example:
+    #   "test a"    -> "test ^a"
+    #   "test a ff" -> unchanged
+    #   "test abc"  -> unchanged
+    if (grepl("(?<=\\s)[A-Za-z]$", value, perl = TRUE)) {
+
+      value <- sub(
+        "([A-Za-z])$",
+        "^\\1",
+        value,
+        perl = TRUE
+      )
+    }
+
+    value
+  }
+
 
   # Body cells
   for (j in seq_along(column_index)) {
@@ -989,19 +1126,38 @@ add_automatic_superscripts <- function(ft,
 
       value <- data[[original_col]][i]
 
+      if (is.na(value)) {
+        next
+      }
+
+      value <- as.character(value)
+
+      # Check whether the value contains either:
+      # 1. explicit "^a" superscript notation, or
+      # 2. a single trailing letter after a space
+      has_explicit_superscript <- grepl(
+        "\\^",
+        value
+      )
+
+      has_automatic_superscript <- grepl(
+        "(?<=\\s)[A-Za-z]$",
+        value,
+        perl = TRUE
+      )
+
       if (
-        !is.na(value) &&
-        grepl(
-          "\\^",
-          as.character(value)
-        )
+        has_explicit_superscript ||
+        has_automatic_superscript
       ) {
+
+        value <- convert_automatic_superscript(value)
 
         ft <- add_superscript_cell(
           ft = ft,
           i = i,
           j = j,
-          value = as.character(value),
+          value = value,
           part = "body",
           fontname = fontname,
           fontname_eastasia = fontname_eastasia,
@@ -1011,25 +1167,44 @@ add_automatic_superscripts <- function(ft,
     }
   }
 
+
   # Header level 1
   if (length(header1) > 0) {
 
     for (j in seq_along(header1)) {
 
       if (
-        !is.na(header1[j]) &&
-        nzchar(header1[j]) &&
-        grepl(
-          "\\^",
-          header1[j]
-        )
+        is.na(header1[j]) ||
+        !nzchar(header1[j])
       ) {
+        next
+      }
+
+      value <- as.character(header1[j])
+
+      has_explicit_superscript <- grepl(
+        "\\^",
+        value
+      )
+
+      has_automatic_superscript <- grepl(
+        "(?<=\\s)[A-Za-z]$",
+        value,
+        perl = TRUE
+      )
+
+      if (
+        has_explicit_superscript ||
+        has_automatic_superscript
+      ) {
+
+        value <- convert_automatic_superscript(value)
 
         ft <- add_superscript_cell(
           ft = ft,
           i = 1,
           j = j,
-          value = header1[j],
+          value = value,
           part = "header",
           fontname = fontname,
           fontname_eastasia = fontname_eastasia,
@@ -1039,17 +1214,36 @@ add_automatic_superscripts <- function(ft,
     }
   }
 
+
   # Header level 2
   for (j in seq_along(header2)) {
 
     if (
-      !is.na(header2[j]) &&
-      nzchar(header2[j]) &&
-      grepl(
-        "\\^",
-        header2[j]
-      )
+      is.na(header2[j]) ||
+      !nzchar(header2[j])
     ) {
+      next
+    }
+
+    value <- as.character(header2[j])
+
+    has_explicit_superscript <- grepl(
+      "\\^",
+      value
+    )
+
+    has_automatic_superscript <- grepl(
+      "(?<=\\s)[A-Za-z]$",
+      value,
+      perl = TRUE
+    )
+
+    if (
+      has_explicit_superscript ||
+      has_automatic_superscript
+    ) {
+
+      value <- convert_automatic_superscript(value)
 
       # Header row depends on whether a first-level header exists
       header_row <- if (length(header1) > 0) {
@@ -1062,9 +1256,10 @@ add_automatic_superscripts <- function(ft,
         ft = ft,
         i = header_row,
         j = j,
-        value = header2[j],
+        value = value,
         part = "header",
         fontname = fontname,
+        fontname_eastasia = fontname_eastasia,
         fontsize = fontsize
       )
     }
@@ -1072,6 +1267,7 @@ add_automatic_superscripts <- function(ft,
 
   ft
 }
+
 
 
 # Add explicit notes
