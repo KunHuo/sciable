@@ -13,7 +13,7 @@
 }
 \value{
 The output of \code{print_booktabs(x, ...)}, typically the table
-  markup or the input object invisibly.
+markup or the input object invisibly.
 }
 \description{
 Print an object as a publication-quality table using the \code{booktabs}

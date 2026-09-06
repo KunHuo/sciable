@@ -8,7 +8,6 @@ get_label <- function(data, var) {
 
 
 extract_var_info <- function(x, data) {
-
   # Helper: generate coefficient name part for one variable
   make_part <- function(var, dat) {
     v <- dat[[var]]
@@ -21,7 +20,10 @@ extract_var_info <- function(x, data) {
 
   # Helper: expand categorical variable to show all levels
   expand_categorical <- function(var, label, v) {
-    lvls <- if (is.factor(v)) levels(v) else sort(unique(v))
+    lvls <- if (is.factor(v))
+      levels(v)
+    else
+      sort(unique(v))
     data.frame(
       term     = c(var, paste0(var, lvls)),
       Variable = c(label, paste0(strrep(" ", 3), lvls)),
@@ -35,18 +37,18 @@ extract_var_info <- function(x, data) {
     part1 <- make_part(vars[1], data)
     part2 <- make_part(vars[2], data)
 
-    interaction_names <- apply(
-      expand.grid(part1, part2, stringsAsFactors = FALSE),
-      1,
-      paste,
-      collapse = ":"
-    )
+    interaction_names <- apply(expand.grid(part1, part2, stringsAsFactors = FALSE),
+                               1,
+                               paste,
+                               collapse = ":")
 
-    return(data.frame(
-      term     = interaction_names,
-      Variable = interaction_names,
-      stringsAsFactors = FALSE
-    ))
+    return(
+      data.frame(
+        term     = interaction_names,
+        Variable = interaction_names,
+        stringsAsFactors = FALSE
+      )
+    )
   }
 
   # Single variable
@@ -59,24 +61,20 @@ extract_var_info <- function(x, data) {
   }
 
   # Numeric/continuous
-  data.frame(
-    term     = x,
-    Variable = label,
-    stringsAsFactors = FALSE
-  )
+  data.frame(term     = x,
+             Variable = label,
+             stringsAsFactors = FALSE)
 }
 
 format_pvalue <- function(x, digits = 3, ...) {
   rounded <- round(x, digits)
-  ifelse(
-    x < 10^-digits,
-    paste0("<", format(10^-digits, scientific = FALSE)),
-    ifelse(
-      rounded >= 1,
-      paste0(">", format(1 - 10^-digits, scientific = FALSE)),
-      format(rounded, scientific = FALSE)
-    )
-  )
+  ifelse(x < 10^-digits,
+         paste0("<", format(10^-digits, scientific = FALSE)),
+         ifelse(
+           rounded >= 1,
+           paste0(">", format(1 - 10^-digits, scientific = FALSE)),
+           format(rounded, scientific = FALSE)
+         ))
 }
 
 
@@ -172,8 +170,7 @@ get_variable_label <- function(lang = c("en", "cn")) {
 }
 
 
-add_estimate_reference <- function(data, lang = "en"){
-
+add_estimate_reference <- function(data, lang = "en") {
   ref.label <- switch(lang, en = "Reference", cn = "\u53c2\u7167\u7ec4")
 
   ci_cols <- grep("95% CI", colnames(data), fixed = TRUE)
@@ -182,9 +179,9 @@ add_estimate_reference <- function(data, lang = "en"){
     return(data)
   }
 
-  if(any(grepl("^\\s{6,}", data[[1]]))){
+  if (any(grepl("^\\s{6,}", data[[1]]))) {
     space_pattern <- "^\\s{6,}"
-  }else{
+  } else{
     space_pattern <- "^\\s{3,}"
   }
 
@@ -197,4 +194,27 @@ add_estimate_reference <- function(data, lang = "en"){
   }
 
   data
+}
+
+flatten_list <- function(items) {
+  morelists <- vapply(items, function(x) {
+    identical(class(x)[1], "list")
+  }, logical(1))
+
+  if (!any(morelists)) {
+    return(items)
+  }
+
+  out <- list()
+
+  for (i in seq_along(items)) {
+    if (morelists[i]) {
+      out <- c(out, items[[i]])
+
+    } else {
+      out[[length(out) + 1L]] <- items[[i]]
+    }
+  }
+
+  Recall(out)
 }

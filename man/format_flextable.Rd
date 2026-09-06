@@ -20,36 +20,36 @@ format_flextable(
 \item{data}{A data frame containing the data to be formatted.}
 
 \item{sep}{A character string used to separate group names from
-column labels in column names. Defaults to `"__"`.}
+column labels in column names. Defaults to \code{"__"}.}
 
 \item{fontname}{A character string specifying the Western font
 used for English letters, numbers, and other Latin-based
-characters. Defaults to `"Times New Roman"`.}
+characters. Defaults to \code{"Times New Roman"}.}
 
 \item{fontname_eastasia}{A character string specifying the East Asian
 font used for Chinese and other East Asian characters.
-Defaults to `"Songti SC"`.}
+Defaults to \code{"Songti SC"}.}
 
 \item{fontsize}{A numeric value specifying the font size in points.
-Defaults to `11`.}
+Defaults to \code{11}.}
 
 \item{column_width}{A numeric value specifying the width of regular
-columns in inches. Defaults to `0.8`.}
+columns in inches. Defaults to \code{0.8}.}
 
 \item{spacer_width}{A numeric value specifying the width of spacer
-columns in inches. Defaults to `0.2`.}
+columns in inches. Defaults to \code{0.2}.}
 
 \item{border_width}{A numeric value specifying the width of table
-borders. Defaults to `1`.}
+borders. Defaults to \code{1}.}
 
 \item{notes}{A list of note specifications. Each note must contain
-`mark` and `col`, and must contain either `row` for body-cell notes
-or `header` for header-cell notes. Column specifications can be
+\code{mark} and \code{col}, and must contain either \code{row} for body-cell notes
+or \code{header} for header-cell notes. Column specifications can be
 numeric indices or column names. Multiple rows and columns are
 supported.}
 }
 \value{
-A `flextable` object.
+A \code{flextable} object.
 }
 \description{
 Format a data frame as a flextable with support for grouped headers,
@@ -58,29 +58,28 @@ footnotes, column widths, alignment, and separate fonts for Western
 and East Asian characters.
 }
 \details{
-Column names containing `sep` are interpreted as grouped columns.
-The text before the first `sep` is used as the group label, while the
+Column names containing \code{sep} are interpreted as grouped columns.
+The text before the first \code{sep} is used as the group label, while the
 remaining text is used as the second-level column label.
 The original column order is preserved, and a spacer column is
 automatically inserted between adjacent column groups.
 
-If no column names contain `sep`, the data are treated as an
+If no column names contain \code{sep}, the data are treated as an
 ordinary table with a single-level header. No grouping or spacer
 columns are created.
 
 Superscripts can be specified directly in cell values or headers
-using the `^` notation. For example, `"1.25^a"` is formatted as
-`1.25` with `a` displayed as a superscript.
+using the \code{^} notation. For example, \code{"1.25^a"} is formatted as
+\code{1.25} with \code{a} displayed as a superscript.
 
-Notes can be added to body cells or header cells using the `notes`
+Notes can be added to body cells or header cells using the \code{notes}
 argument. Both numeric column indices and column names are supported,
 and multiple rows or columns can be specified within a single note.
 
-The `fontname` argument controls the Western font, including
+The \code{fontname} argument controls the Western font, including
 English letters, numbers, and other Latin-based characters.
-The `fontname_eastasia` argument controls the East Asian font,
+The \code{fontname_eastasia} argument controls the East Asian font,
 including Chinese characters.
-
 
 The function creates a two-level header when grouped columns are
 detected. Grouped columns are merged horizontally within the first
@@ -95,8 +94,8 @@ a border below the header, and a bottom border below the table body.
 All table text is regular weight by default, and the first body
 column is left-aligned while other cells are centered.
 
-Superscripts specified with `^` are automatically parsed in both
-body cells and header cells. Explicit notes added through `notes`
+Superscripts specified with \code{^} are automatically parsed in both
+body cells and header cells. Explicit notes added through \code{notes}
 are displayed as superscripts and their corresponding descriptions
 are added to the table footer.
 
@@ -104,8 +103,8 @@ Western and East Asian fonts are specified independently. This allows
 English and numeric characters to use one font while Chinese
 characters use another font when the table is exported to Word.
 
-If `fontname_eastasia` is `NULL`, the East Asian font defaults to
-the value supplied to `fontname`.
+If \code{fontname_eastasia} is \code{NULL}, the East Asian font defaults to
+the value supplied to \code{fontname}.
 }
 \examples{
 # Ordinary table: no "__" in column names

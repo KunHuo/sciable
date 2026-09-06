@@ -8,42 +8,41 @@ write_word(..., path, landscape = FALSE)
 }
 \arguments{
 \item{...}{Objects to be written to the Word document. Supported objects
-include `data.frame`, `flextable`, `ggplot`, character strings, and
+include \code{data.frame}, \code{flextable}, \code{ggplot}, character strings, and
 nested lists containing supported objects.}
 
-\item{path}{Character string specifying the path of the output `.docx`
+\item{path}{Character string specifying the path of the output \code{.docx}
 file.}
 
 \item{landscape}{Logical value indicating whether the default page
-orientation should be landscape. The default is `FALSE`. An individual
-object can override this setting by specifying a `landscape` attribute.}
+orientation should be landscape. The default is \code{FALSE}. An individual
+object can override this setting by specifying a \code{landscape} attribute.}
 }
 \value{
-Invisibly returns the `officer` Word document object.
+Invisibly returns the \code{officer} Word document object.
 }
 \description{
 Create a Word document from multiple R objects and save it as a
-Microsoft Word `.docx` file. Supported objects can be supplied directly
+Microsoft Word \code{.docx} file. Supported objects can be supplied directly
 or nested within lists. Objects are written to the document in their
 original order.
 }
 \details{
-Page orientation can be specified globally using `landscape` or
-individually for each object using a `landscape` attribute. A section
+Page orientation can be specified globally using \code{landscape} or
+individually for each object using a \code{landscape} attribute. A section
 break is added only when the orientation changes between consecutive
 objects.
 
+The Word document is created from the \code{default.docx} template returned by
+\code{get_template("default.docx")}.
 
-The Word document is created from the `default.docx` template returned by
-`get_template("default.docx")`.
-
-For `data.frame` objects, `add_docx_item()` handles conversion to a
-`flextable`. If a `data.frame` has a `title` or `note` attribute, these
+For \code{data.frame} objects, \code{add_docx_item()} handles conversion to a
+\code{flextable}. If a \code{data.frame} has a \code{title} or \code{note} attribute, these
 are added above and below the table, respectively.
 
-Ordinary lists are recursively flattened by `flatten_docx_items()` while
-preserving the original order of objects. Objects such as `data.frame`,
-`flextable`, and `ggplot` are treated as individual document items.
+Ordinary lists are recursively flattened by \code{flatten_docx_items()} while
+preserving the original order of objects. Objects such as \code{data.frame},
+\code{flextable}, and \code{ggplot} are treated as individual document items.
 }
 \examples{
 \dontrun{

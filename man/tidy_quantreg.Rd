@@ -23,34 +23,34 @@ tidy_quantreg(
 \item{se.method}{Character string specifying the method used to compute
 standard errors. There are currently eight available methods:
 \describe{
-  \item{\code{"rank"}}{Produces confidence intervals by inverting a rank
-    test as described in Koenker (1994). Involves solving a parametric
-    linear programming problem; for large sample sizes can be extremely
-    slow. The default option assumes iid errors, while
-    \code{iid = FALSE} implements a proposal of Koenker and Machado
-    (1999).}
-  \item{\code{"iid"}}{Presumes that the errors are iid and computes an
-    estimate of the asymptotic covariance matrix as in Koenker and Bassett
-    (1978).}
-  \item{\code{"nid"}}{Presumes local (in tau) linearity (in x) of the
-    conditional quantile functions and computes a Huber sandwich estimate
-    using a local estimate of the sparsity. If the initial fitting was done
-    with method \code{"sfn"}, then \code{se = "nid"} is recommended.}
-  \item{\code{"ker"}}{Uses a kernel estimate of the sandwich as proposed
-    by Powell (1991).}
-  \item{\code{"boot"}}{Implements one of several possible bootstrapping
-    alternatives for estimating standard errors, including a variant of the
-    wild bootstrap for clustered response.}
-  \item{\code{"BLB"}}{Implements the bag of little bootstraps method
-    proposed in Kleiner et al. (2014). Intended for applications with very
-    large n where other flavors of the bootstrap can be slow.}
-  \item{\code{"conquer"}}{Invoked automatically if the fitted object was
-    created with \code{method = "conquer"}, and returns the multiplier
-    bootstrap percentile confidence intervals described in He et al.
-    (2020).}
-  \item{\code{"extreme"}}{Uses the subsampling method of Chernozhukov,
-    Fernandez-Val, and Kaji (2018) designed for inference on extreme
-    quantiles.}
+\item{\code{"rank"}}{Produces confidence intervals by inverting a rank
+test as described in Koenker (1994). Involves solving a parametric
+linear programming problem; for large sample sizes can be extremely
+slow. The default option assumes iid errors, while
+\code{iid = FALSE} implements a proposal of Koenker and Machado
+(1999).}
+\item{\code{"iid"}}{Presumes that the errors are iid and computes an
+estimate of the asymptotic covariance matrix as in Koenker and Bassett
+(1978).}
+\item{\code{"nid"}}{Presumes local (in tau) linearity (in x) of the
+conditional quantile functions and computes a Huber sandwich estimate
+using a local estimate of the sparsity. If the initial fitting was done
+with method \code{"sfn"}, then \code{se = "nid"} is recommended.}
+\item{\code{"ker"}}{Uses a kernel estimate of the sandwich as proposed
+by Powell (1991).}
+\item{\code{"boot"}}{Implements one of several possible bootstrapping
+alternatives for estimating standard errors, including a variant of the
+wild bootstrap for clustered response.}
+\item{\code{"BLB"}}{Implements the bag of little bootstraps method
+proposed in Kleiner et al. (2014). Intended for applications with very
+large n where other flavors of the bootstrap can be slow.}
+\item{\code{"conquer"}}{Invoked automatically if the fitted object was
+created with \code{method = "conquer"}, and returns the multiplier
+bootstrap percentile confidence intervals described in He et al.
+(2020).}
+\item{\code{"extreme"}}{Uses the subsampling method of Chernozhukov,
+Fernandez-Val, and Kaji (2018) designed for inference on extreme
+quantiles.}
 }
 If \code{se.method = NULL} (the default) and \code{covariance = FALSE},
 and the sample size is less than 1001, then the \code{"rank"} method is
@@ -83,8 +83,8 @@ Default is \code{"en"}.}
 }
 \value{
 A data frame of formatted model coefficients. The data frame has an
-  additional attribute \code{"title"} containing a language-specific table
-  caption. Row names are \code{NULL}.
+additional attribute \code{"title"} containing a language-specific table
+caption. Row names are \code{NULL}.
 }
 \description{
 Extracts, formats, and tidies coefficients from a fitted quantile regression
