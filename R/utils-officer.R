@@ -1,5 +1,6 @@
 PACKAGE.NANE <- "sciable"
 
+
 #' Write objects to a Word document
 #'
 #' Create a Word document from multiple R objects and save it as a
@@ -7,19 +8,20 @@ PACKAGE.NANE <- "sciable"
 #' or nested within lists. Objects are written to the document in their
 #' original order.
 #'
-#' Page orientation can be specified globally using `landscape` or
-#' individually for each object using a `landscape` attribute. A section
-#' break is added only when the orientation changes between consecutive
-#' objects.
+#' Page orientation can be specified globally using `landscape`.
 #'
-#' @param ... Objects to be written to the Word document. Supported objects
+#' Objects can be separated by page breaks using `page_break`.
+#'
+#' @param objects Objects to be written to the Word document. Can be a single
+#'   supported object or a list of supported objects. Supported objects
 #'   include `data.frame`, `flextable`, `ggplot`, character strings, and
 #'   nested lists containing supported objects.
 #' @param path Character string specifying the path of the output `.docx`
 #'   file.
-#' @param landscape Logical value indicating whether the default page
-#'   orientation should be landscape. The default is `FALSE`. An individual
-#'   object can override this setting by specifying a `landscape` attribute.
+#' @param landscape Logical value indicating whether the page orientation
+#'   should be landscape. The default is `FALSE`.
+#' @param page_break Logical value indicating whether a page break should be
+#'   inserted between objects. The default is `TRUE`.
 #'
 #' @return Invisibly returns the `officer` Word document object.
 #'
@@ -32,134 +34,82 @@ PACKAGE.NANE <- "sciable"
 #' are added above and below the table, respectively.
 #'
 #' Ordinary lists are recursively flattened by `flatten_docx_items()` while
-#' preserving the original order of objects. Objects such as `data.frame`,
-#' `flextable`, and `ggplot` are treated as individual document items.
+#' preserving the original order of objects.
 #'
 #' @examples
 #' \dontrun{
-#' # Write individual objects
 #' write_word(
-#'   head(iris),
-#'   head(mtcars),
+#'   objects = list(head(iris), head(mtcars)),
 #'   path = "results.docx"
 #' )
 #'
-#' # Write objects supplied as a list
-#' tables <- list(
-#'   head(iris, 2),
-#'   head(iris, 3)
-#' )
-#'
 #' write_word(
-#'   tables,
-#'   path = "tables.docx"
-#' )
-#'
-#' # Mix lists and individual objects
-#' write_word(
-#'   tables,
-#'   "Title",
-#'   head(iris, 4),
-#'   path = "results.docx"
-#' )
-#'
-#' # Specify the page orientation globally
-#' write_word(
-#'   head(iris),
-#'   path = "landscape.docx",
+#'   objects = list(head(iris), head(mtcars)),
+#'   path = "results_landscape.docx",
 #'   landscape = TRUE
 #' )
 #'
-#' # Specify the orientation for an individual object
-#' x <- head(iris)
-#' attr(x, "landscape") <- TRUE
-#'
 #' write_word(
-#'   x,
-#'   head(mtcars),
-#'   path = "mixed_orientation.docx"
+#'   objects = list(head(iris), head(mtcars)),
+#'   path = "results_continuous.docx",
+#'   page_break = FALSE
 #' )
 #' }
 #'
 #' @export
-write_word <- function(..., path, landscape = FALSE) {
-  # Collect all input objects
-  items <- list(...)
+write_word <- function(objects,
+                       path,
+                       landscape = FALSE,
+                       page_break = TRUE) {
+  # Ensure objects is always a list
+  if (!inherits(objects, "list")) {
+    objects <- list(objects)
+  }
 
-  # Flatten ordinary lists while preserving order
-  #items <- flatten_docx_items(items)
+
+  # Flatten ordinary lists
+  items <- flatten_docx_items(objects)
+
 
   # Create Word document
   doc <- officer::read_docx(get_template("default.docx"))
 
-  # Set the initial document orientation directly
-  initial_section <- officer::prop_section(
-    page_size = officer::page_size(
-      orient = if (isTRUE(landscape)) {
-        "landscape"
-      } else {
-        "portrait"
-      }
-    )
-  )
 
-  doc <- officer::body_set_default_section(
-    doc,
-    value = initial_section
-  )
+  # Set document orientation
+  doc <- officer::body_set_default_section(doc, value = officer::prop_section(page_size = officer::page_size(orient = if (isTRUE(landscape)) {
+    "landscape"
+  } else {
+    "portrait"
+  })))
 
-  # Track the previous page orientation
-  previous_landscape <- isTRUE(landscape)
 
   # Add objects sequentially
   for (i in seq_along(items)) {
-    item <- items[[i]]
-
-    # Determine the orientation for the current object
-    current_landscape <- get_item_landscape(
-      item = item,
-      default = landscape
-    )
-
-    # Change section only when orientation changes
-    if (!identical(current_landscape, previous_landscape)) {
-      doc <- set_docx_orientation(
-        doc = doc,
-        landscape = current_landscape
-      )
-    }
-
-    # Add current object
     doc <- add_docx_item(
       doc = doc,
-      item = item,
-      landscape = current_landscape,
+      item = items[[i]],
+      landscape = landscape,
       title_style = "table title",
       note_style = "Normal"
     )
 
-    # Add spacing between objects
-    if (i < length(items)) {
-      doc <- officer::body_add_par(
-        doc,
-        value = "",
-        style = "Normal"
-      )
-    }
 
-    # Update previous orientation
-    previous_landscape <- current_landscape
+    # Separate objects
+    if (i < length(items)) {
+      if (isTRUE(page_break)) {
+        doc <- officer::body_add_break(doc, pos = "after")
+
+      } else {
+        doc <- officer::body_add_par(doc, value = "", style = "Normal")
+      }
+    }
   }
 
-  # Save Word document
-  exec_write_docx(
-    x = doc,
-    path = path
-  )
+  # Save document
+  exec_write_docx(x = doc, path = path)
 
   invisible(doc)
 }
-
 
 # Get file extension
 file_ext <- function(path) {
@@ -264,7 +214,7 @@ get_template <- function(template) {
   return(template)
 }
 
-# Flatten ordinary lists while preserving object order
+
 flatten_docx_items <- function(items) {
   morelists <- vapply(items, function(x) {
     identical(class(x)[1], "list")
@@ -278,26 +228,16 @@ flatten_docx_items <- function(items) {
 
   for (i in seq_along(items)) {
     if (morelists[i]) {
-      out <- c(out, items[[i]])
-
+      # Use append instead of c() to preserve attributes
+      for (j in seq_along(items[[i]])) {
+        out[[length(out) + 1L]] <- items[[i]][[j]]
+      }
     } else {
       out[[length(out) + 1L]] <- items[[i]]
     }
   }
 
   Recall(out)
-}
-
-
-# Get the landscape setting for an individual object
-get_item_landscape <- function(item, default = FALSE) {
-  value <- attr(item, "landscape", exact = TRUE)
-
-  if (is.null(value)) {
-    return(isTRUE(default))
-  }
-
-  isTRUE(value)
 }
 
 
@@ -312,89 +252,6 @@ add_docx_title <- function(doc, title, style = "Normal") {
   officer::body_add_par(doc, value = title, style = style)
 }
 
-
-# add_docx_note <- function(doc,
-#                           value,
-#                           style = "Normal",
-#                           fontname = "Times New Roman",
-#                           fontname_eastasia = "SimSun",
-#                           fontsize = 11) {
-#
-#   stopifnot(
-#     is.character(value),
-#     length(value) == 1
-#   )
-#
-#   # Split text by paragraph breaks
-#   paragraphs <- strsplit(
-#     value,
-#     "\n",
-#     fixed = TRUE
-#   )[[1]]
-#
-#   # Add each paragraph separately
-#   for (p in paragraphs) {
-#
-#     # Split text into superscript and normal text
-#     parts <- regmatches(
-#       p,
-#       gregexpr(
-#         "\\^[^\\^]+\\^|[^\\^]+",
-#         p,
-#         perl = TRUE
-#       )
-#     )[[1]]
-#
-#     chunks <- lapply(parts, function(x) {
-#
-#       # Superscript text
-#       if (grepl("^\\^[^\\^]+\\^$", x)) {
-#
-#         text <- sub("^\\^", "", x)
-#         text <- sub("\\^$", "", text)
-#
-#         officer::ftext(
-#           text,
-#           prop = officer::fp_text(
-#             font.family = fontname,
-#             cs.family = fontname,
-#             eastasia.family = fontname_eastasia,
-#             font.size = fontsize,
-#             vertical.align = "superscript"
-#           )
-#         )
-#
-#         # Normal text
-#       } else {
-#
-#         officer::ftext(
-#           x,
-#           prop = officer::fp_text(
-#             font.family = fontname,
-#             cs.family = fontname,
-#             eastasia.family = fontname_eastasia,
-#             font.size = fontsize
-#           )
-#         )
-#       }
-#     })
-#
-#     # Create one paragraph
-#     fp <- do.call(
-#       officer::fpar,
-#       chunks
-#     )
-#
-#     # Add one real Word paragraph
-#     doc <- officer::body_add_fpar(
-#       doc,
-#       fp,
-#       style = style
-#     )
-#   }
-#
-#   doc
-# }
 
 add_docx_note <- function(doc,
                           value,
@@ -553,19 +410,6 @@ add_docx_plot <- function(doc,
                         height = size$height)
 }
 
-
-# Set the Word document section orientation
-set_docx_orientation <- function(doc, landscape = FALSE) {
-  section <- officer::prop_section(page_size = officer::page_size(orient = if (isTRUE(landscape)) {
-    "landscape"
-  } else {
-    "portrait"
-  }))
-
-  doc <- officer::body_end_section_continuous(doc)
-
-  officer::body_set_default_section(doc, section)
-}
 
 
 # Add an object to a Word document
