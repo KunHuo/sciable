@@ -21,6 +21,7 @@ Imports:
     dplyr,
     flextable,
     ggplot2,
+    ggsci,
     grDevices,
     officer,
     patchwork

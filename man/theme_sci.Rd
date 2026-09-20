@@ -5,6 +5,7 @@
 \title{Scientific / publication ggplot2 theme}
 \usage{
 theme_sci(
+  palette = "jama",
   base.size = 7,
   base.family = "sans",
   base.line.size = 0.25,
@@ -80,6 +81,10 @@ theme_sci(
 )
 }
 \arguments{
+\item{palette}{Palette name (e.g., "jama", "npg", "lancet") or a
+character vector of custom colors. See \code{\link{pal}} for all supported
+palette names. Set to NULL to skip setting default colors.}
+
 \item{base.size}{Base font size (points).}
 
 \item{base.family}{Base font family.}

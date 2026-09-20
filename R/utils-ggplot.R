@@ -4,6 +4,9 @@
 #' journal-style figures. Most non-data appearance parameters are exposed
 #' as arguments; anything not covered can still be overridden via `...`.
 #'
+#' @param palette          Palette name (e.g., "jama", "npg", "lancet") or a
+#'   character vector of custom colors. See \code{\link{pal}} for all supported
+#'   palette names. Set to NULL to skip setting default colors.
 #' @param base.size        Base font size (points).
 #' @param base.family      Base font family.
 #' @param base.line.size   Default size for line elements (axis, ticks, borders).
@@ -80,7 +83,8 @@
 #' @param ...              Additional elements passed to [ggplot2::theme()].
 #' @return A ggplot2 theme object with an additional class for handling clip.
 #' @export
-theme_sci <- function(base.size = 7,
+theme_sci <- function(palette = "jama",
+                      base.size = 7,
                       base.family = "sans",
                       base.line.size = 0.25,
                       base.rect.size = 0.25,
@@ -205,11 +209,21 @@ theme_sci <- function(base.size = 7,
 
   # Base theme
   th <- ggplot2::theme_bw(
-    # base_size    = base.size,
     base_family  = base.family,
     base_line_size = base.line.size,
     base_rect_size = base.rect.size
   )
+
+  # Resolve palette colors
+  if (is.null(palette)) {
+    pal_colors <- NULL
+  } else if (is.character(palette) && length(palette) == 1 && !grepl("^#", palette)) {
+    # Palette name string
+    pal_colors <- pal(palette = palette)
+  } else {
+    # Custom color vector
+    pal_colors <- palette
+  }
 
   # Core custom theme
   th <- th + ggplot2::theme(
@@ -320,6 +334,15 @@ theme_sci <- function(base.size = 7,
     plot.margin        = ggplot2::unit(plot.margin, "cm"),
 
     aspect.ratio = aspect.ratio,
+
+    # Theme-side default palettes
+    palette.colour.discrete = pal_colors,
+    palette.colour.continuous = if (!is.null(pal_colors) && length(pal_colors) >= 2)
+      pal_colors[c(2, 1)] else pal_colors,
+    palette.fill.discrete = pal_colors,
+    palette.fill.continuous = if (!is.null(pal_colors) && length(pal_colors) >= 2)
+      pal_colors[c(2, 1)] else pal_colors,
+
     complete = complete
   )
 
@@ -342,6 +365,7 @@ theme_sci <- function(base.size = 7,
   # Allow user overrides last
   th + ggplot2::theme(...)
 }
+
 
 #' @importFrom ggplot2 ggplot_add
 #' @keywords internal
