@@ -124,11 +124,19 @@ export(scale_fill_tron)
 export(scale_fill_tw3)
 export(scale_fill_uchicago)
 export(scale_fill_ucscgb)
+export(set_na)
 export(shade_colors)
 export(show_colors)
 export(theme_sci)
 export(tidy_quantreg)
 export(write_word)
 import(ggsci)
-importFrom(dplyr,.data)
+importFrom(dplyr,
+  .data,
+  across,
+  any_of,
+  everything,
+  mutate,
+  where
+)
 importFrom(ggplot2,ggplot_add)

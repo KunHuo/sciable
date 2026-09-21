@@ -218,3 +218,68 @@ flatten_list <- function(items) {
 
   Recall(out)
 }
+
+
+#' Set specific values to NA in a data frame
+#'
+#' This function replaces specified values with NA in selected columns or all columns of a data frame.
+#' Optionally converts the affected columns to numeric type after replacement.
+#'
+#' @param data A data frame to process.
+#' @param ... Values to be replaced with NA. Can be multiple values separated by commas.
+#' @param cols Character vector specifying column names to apply the replacement. If NULL, applies to all columns.
+#' @param to_num Logical flag indicating whether to convert affected columns to numeric. Default is FALSE.
+#'
+#' @return A data frame with specified values replaced by NA and optionally converted to numeric.
+#'
+#' @examples
+#' # Example 1: Replace single value in all columns
+#' df <- data.frame(x = c(1, 999, 3), y = c(999, 2, 3))
+#' set_na(df, 999)
+#'
+#' # Example 2: Replace multiple values in specific columns
+#' df <- data.frame(a = c("N/A", "OK", "N/A"), b = c("OK", "N/A", "OK"))
+#' set_na(df, "N/A", cols = "a")
+#'
+#' # Example 3: Replace values and convert to numeric
+#' df <- data.frame(x = c("1", "NA", "3"), y = c("NA", "2", "3"))
+#' set_na(df, "NA", cols = "x", to_num = TRUE)
+#'
+#' # Example 4: Replace multiple different values at once
+#' df <- data.frame(x = c(-99, 0, 5), y = c(0, -99, 10))
+#' set_na(df, -99, 0)
+#'
+#' # Example 5: Mixed types with conversion
+#' df <- data.frame(x = c("NULL", "5", "NULL"), y = c("3", "NULL", "7"))
+#' set_na(df, "NULL", to_num = TRUE)
+#'
+#' @importFrom dplyr mutate across everything where any_of
+#' @export
+set_na <- function(data,
+                   ...,
+                   cols = NULL,
+                   to_num = FALSE) {
+  # Collect values to be replaced as NA
+  na_vals <- list(...)
+
+  # Apply NA replacement to either all columns or specified columns
+  if (is.null(cols)) {
+    res <- dplyr::mutate(data, dplyr::across(dplyr::everything(), ~ ifelse(.x %in% unlist(na_vals), NA, .x)))
+  } else {
+    res <- dplyr::mutate(data, dplyr::across(dplyr::any_of(cols), ~ ifelse(.x %in% unlist(na_vals), NA, .x)))
+  }
+
+  # Optionally convert character columns to numeric
+  if (to_num) {
+    if (is.null(cols)) {
+      res <- dplyr::mutate(res, dplyr::across(where(is.character), ~ suppressWarnings(as.numeric(.))))
+    } else {
+      res <- dplyr::mutate(res, dplyr::across(dplyr::any_of(cols), ~ suppressWarnings(as.numeric(
+        as.character(.)
+      ))))
+    }
+  }
+
+  # Return the modified data frame
+  return(res)
+}
