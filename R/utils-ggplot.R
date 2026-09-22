@@ -923,32 +923,3 @@ arrange_plots <- function(...,
                         guides = guides,
                         design = design)
 }
-
-geom_save <- function(filename = "plot.png", width = 4, height = 3, dpi = 300, ...) {
-  structure(
-    list(
-      filename = filename,
-      width = width,
-      height = height,
-      dpi = dpi,
-      args = list(...)
-    ),
-    class = "geom_save"
-  )
-}
-
-ggplot_add.geom_save <- function(object, plot, ...) {
-  invisible(
-    do.call(ggplot2::ggsave, c(
-      list(
-        filename = object$filename,
-        plot = plot,
-        width = object$width,
-        height = object$height,
-        dpi = object$dpi,
-        bg = "white"
-      ),
-      object$args
-    ))
-  )
-}
