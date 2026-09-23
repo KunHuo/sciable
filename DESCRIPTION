@@ -24,7 +24,9 @@ Imports:
     ggsci,
     grDevices,
     officer,
-    patchwork
+    patchwork,
+    readxl,
+    writexl
 Suggests: 
     quantreg
 Config/roxygen2/version: 8.1.0

@@ -445,7 +445,7 @@ clip_off <- function(clip = "off") {
 #' combined <- p1 + p2
 #' gg_save(combined, "combined.pdf", family = "Microsoft YaHei")
 #' }
-gg_save <- function(plot,
+gg_save <- function(plot = ggplot2::last_plot(),
                     path,
                     width = 8.5,
                     height = width / 1.618,

@@ -5,7 +5,7 @@
 \title{Save a ggplot with automatic PDF detection}
 \usage{
 gg_save(
-  plot,
+  plot = ggplot2::last_plot(),
   path,
   width = 8.5,
   height = width/1.618,
