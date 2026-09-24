@@ -9,7 +9,7 @@ read_codes <- function(codes) {
       ext,
       xlsx = readxl::read_excel(codes),
       xls  = readxl::read_excel(codes),
-      csv  = read.csv(codes, stringsAsFactors = FALSE),
+      csv  = utils::read.csv(codes, stringsAsFactors = FALSE),
       stop("Unsupported file format. Use .xlsx, .xls, or .csv")
     )
   }
@@ -192,6 +192,11 @@ get_codes <- function(data,
                       file = NULL) {
   lang <- match.arg(lang)
 
+  get_last_class <- function(x) {
+    cls <- class(x)
+    cls[length(cls)]
+  }
+
   # Build one row per variable
   rows <- lapply(names(data), function(var) {
     lbl <- attr(data[[var]], "label")
@@ -206,7 +211,6 @@ get_codes <- function(data,
       variable = var,
       label = lbl,
       value = val,
-      missing = "",
       stringsAsFactors = FALSE
     )
   })
@@ -216,12 +220,11 @@ get_codes <- function(data,
 
   # Set column names based on language
   if (lang == "en") {
-    names(df) <- c("Variable", "Label", "Value", "Missing")
+    names(df) <- c("Variable", "Label", "Value")
   } else {
     names(df) <- c("\u53d8\u91cf",
                    "\u6807\u7b7e",
-                   "\u53d6\u503c",
-                   "\u7f3a\u5931\u503c")
+                   "\u53d6\u503c")
   }
 
   # Save to file if requested
@@ -231,10 +234,29 @@ get_codes <- function(data,
       ext,
       xlsx = writexl::write_xlsx(df, file),
       xls  = writexl::write_xlsx(df, file),
-      csv  = write.csv(df, file, row.names = FALSE, fileEncoding = "UTF-8"),
-      stop("Unsupported file format. Use .xlsx, .xls, or .csv")
+      docx = write_word(df, file),
+      doc  = write_word(df, file),
+      csv  = utils::write.csv(df, file, row.names = FALSE, fileEncoding = "UTF-8"),
+      stop("Unsupported file format. Use .xlsx, .xls, .docx, .doc, or .csv")
     )
   }
 
+  class(df) <- c("codes", "data.frame")
+
   df
+}
+
+
+#' Print codes object using booktabs format
+#'
+#' @param x A codes object to be printed
+#' @param ... Additional arguments passed to print_booktabs
+#'
+#' @return Invisibly returns the formatted table output from print_booktabs
+#'
+#' @keywords internal
+#'
+#' @export
+print.codes <- function(x, ...){
+  print_booktabs(x, ...)
 }

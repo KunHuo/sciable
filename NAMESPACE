@@ -3,6 +3,7 @@
 S3method(ggplot_add,pretty_breaks)
 S3method(ggplot_add,theme_sci)
 S3method(print,booktabs)
+S3method(print,codes)
 export(add_tag)
 export(arrange_plots)
 export(axis_line)
