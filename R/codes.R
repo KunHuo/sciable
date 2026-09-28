@@ -120,6 +120,8 @@ set_label <- function(col, s) {
 #'
 #' @return A data frame with applied labels and missing value handling
 #'
+#' @export
+#'
 #' @examples
 #' \dontrun{
 #' codes <- data.frame(
@@ -178,6 +180,8 @@ apply_codes <- function(data, codes) {
 #' @param file Optional file path to save the codebook (.xlsx, .xls, .csv)
 #'
 #' @return A data frame representing the codebook
+#'
+#' @export
 #'
 #' @examples
 #' \dontrun{
