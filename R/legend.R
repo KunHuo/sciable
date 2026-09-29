@@ -358,3 +358,69 @@ legend_position <- function(position = "right",
 
   return(components)
 }
+
+#' Override legend key appearance via override.aes
+#'
+#' @param size glyph size in legend. For point/shape legends, this controls
+#'   point size. For fill legends, this controls key box size.
+#' @param aesthetics which aesthetic to override. Possible values:
+#'   \code{"all"}, \code{"color"}, \code{"fill"},
+#'   \code{"shape"}, \code{"size"}, \code{"alpha"}, \code{"linetype"},
+#'   \code{"linewidth"}, \code{"stroke"}.
+#'
+#' @examples
+#' library(ggplot2)
+#'
+#' # Default: override all legend aesthetics
+#' ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
+#'   geom_point(size = 0.8) +
+#'   legend_key_size(size = 5)
+#'
+#' # Override colour only
+#' ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
+#'   geom_point(size = 0.8) +
+#'   legend_key_size(size = 5, aesthetics = "color")
+#'
+#' # With fill aesthetic
+#' ggplot(mpg, aes(class, hwy, fill = class)) +
+#'   geom_boxplot() +
+#'   legend_key_size(size = 7)
+#'
+#' @export
+legend_key_size <- function(size = 4,
+                            aesthetics = c("all", "color", "fill", "shape",
+                                           "size", "alpha", "linetype", "linewidth", "stroke")) {
+
+  # Define all specific aesthetics (excluding "all")
+  all_aes <- c("color", "fill", "shape", "size", "alpha",
+               "linetype", "linewidth", "stroke")
+
+  # Partial matching, only one value allowed
+  aesthetics <- match.arg(aesthetics)
+
+  # If "all", replace with all specific aesthetics
+  if (aesthetics == "all") {
+    aesthetics <- all_aes
+  }
+
+  # override.aes arguments
+  aes_args <- list(size = size)
+
+  # Create guide_legend for each aesthetic
+  guides_list <- lapply(
+    stats::setNames(aesthetics, aesthetics),
+    function(a) ggplot2::guide_legend(override.aes = aes_args)
+  )
+
+  # Combine all guides using do.call
+  guides_part <- do.call(ggplot2::guides, guides_list)
+
+  # Also adjust key box size for fill legends
+  theme_part <- ggplot2::theme(
+    legend.key.width = grid::unit(size * 0.15, "cm"),
+    legend.key.height = grid::unit(size * 0.15, "cm")
+  )
+
+  # Return both parts
+  list(guides_part, theme_part)
+}

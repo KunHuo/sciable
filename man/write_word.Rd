@@ -2,9 +2,12 @@
 % Please edit documentation in R/utils-officer.R
 \name{write_word}
 \alias{write_word}
+\alias{write_docx}
 \title{Write objects to a Word document}
 \usage{
 write_word(objects, path, landscape = FALSE, page_break = TRUE)
+
+write_docx(objects, path, landscape = FALSE, page_break = TRUE)
 }
 \arguments{
 \item{objects}{Objects to be written to the Word document. Can be a single

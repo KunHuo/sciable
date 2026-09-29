@@ -111,6 +111,10 @@ write_word <- function(objects,
   invisible(doc)
 }
 
+#' @rdname write_word
+#' @export
+write_docx <- write_word
+
 # Get file extension
 file_ext <- function(path) {
   if (length(path) != 1L || is.na(path)) {

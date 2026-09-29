@@ -20,7 +20,6 @@ Imports:
     colorspace,
     dplyr,
     flextable,
-    ggplot2,
     ggsci,
     grDevices,
     officer,
@@ -29,5 +28,7 @@ Imports:
     writexl
 Suggests: 
     quantreg
+Depends:
+    ggplot2 (>= 4.0.0)
 Config/roxygen2/version: 8.1.0
 Roxygen: list(markdown = TRUE)
